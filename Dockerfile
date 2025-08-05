@@ -14,8 +14,8 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add
  && apt-get update && apt-get install -y google-chrome-stable \
  && rm -rf /var/lib/apt/lists/*
 
-# 3) Install matching Chromedriver
-RUN CHROME_VER=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') \
+# 3) Install matching Chromedriver (use POSIX grep)
+RUN CHROME_VER=$(google-chrome --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+') \
  && DRIVER_VER=$(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VER%.*}) \
  && wget -O /tmp/chromedriver.zip \
       https://chromedriver.storage.googleapis.com/${DRIVER_VER}/chromedriver_linux64.zip \
