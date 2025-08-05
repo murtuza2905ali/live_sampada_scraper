@@ -1,18 +1,13 @@
 services:
   - type: web
-    name: sampada-scraper
-    env: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    startCommand: >
-      sh -c "cd sampada_scraper &&
-             gunicorn sampada_scraper.wsgi:application --bind 0.0.0.0:8000"
+    # …
     envVars:
       - key: ENV
         value: production
       - key: CHROME_BINARY
-        value: /usr/bin/google-chrome-stable
+        value: /usr/bin/chromium
       - key: CHROMEDRIVER_PATH
-        value: /usr/bin/chromedriver
-autoscaling:
-  enabled: false
+        value: /usr/bin/chromium-driver
+      - key: ALLOWED_HOSTS
+        # include your Render domain; you can comma-separate multiple
+        value: "live-sampada-scraper.onrender.com"
