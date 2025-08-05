@@ -1,17 +1,29 @@
 import os
 from pathlib import Path
 
-# Base dir
+# ─── Base dir ────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# 1) Secret & Debug from ENV
+# ─── Secret & Debug from ENV ────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-very-secret-key")
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-# 2) Allowed hosts from ENV
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# ─── Allowed hosts ────────────────────────────────────────────────────────────
+# If ALLOWED_HOSTS env set, use that; else if DEBUG=False, allow all; else localhost
+if os.getenv("ALLOWED_HOSTS"):
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
+elif not DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
-# 3) Apps
+# ─── CSRF trusted origins ─────────────────────────────────────────────────────
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
+
+# ─── Use forwarded host header (behind Render’s proxy) ───────────────────────
+USE_X_FORWARDED_HOST = True
+
+# ─── Installed apps ───────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -22,10 +34,10 @@ INSTALLED_APPS = [
     'myapp',
 ]
 
-# 4) Middleware (Whitenoise for static files)
+# ─── Middleware (add WhiteNoise) ─────────────────────────────────────────────
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # added
+    'whitenoise.middleware.WhiteNoiseMiddleware',     # static file serving
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -34,9 +46,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# ─── URL conf & WSGI ─────────────────────────────────────────────────────────
 ROOT_URLCONF = 'sampada_scraper.urls'
+WSGI_APPLICATION = 'sampada_scraper.wsgi.application'
 
-# 5) Templates
+# ─── Templates ────────────────────────────────────────────────────────────────
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -53,9 +67,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'sampada_scraper.wsgi.application'
-
-# 6) Database (SQLite for dev; switch to Postgres via DATABASE_URL in PROD if needed)
+# ─── Database (default SQLite) ────────────────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -63,20 +75,20 @@ DATABASES = {
     }
 }
 
-# 7) Password validators (kept empty)
+# ─── Password validators ──────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = []
 
-# 8) Internationalization
+# ─── Internationalization ─────────────────────────────────────────────────────
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
-# 9) Static files
+# ─── Static files (WhiteNoise) ────────────────────────────────────────────────
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'             # collectstatic yahan karega
-STATICFILES_DIRS = [BASE_DIR / 'myapp' / 'static']  # agar static app folder mein hai
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'myapp' / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# 10) Default primary key field
+# ─── Default auto field ───────────────────────────────────────────────────────
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
