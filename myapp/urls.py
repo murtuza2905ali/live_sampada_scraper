@@ -1,6 +1,6 @@
 from django.urls import path
-from . import views
+from .views import trigger_scrape
 
 urlpatterns = [
-    path('trigger-scrape/', views.trigger_scrape, name='trigger_scrape'),
+    path('', trigger_scrape, name='trigger_scrape'),  # root → trigger_scrape view
 ]
