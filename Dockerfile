@@ -18,8 +18,6 @@ COPY . .
 ENV CHROME_BINARY=/usr/bin/chromium \
     CHROMEDRIVER_PATH=/usr/bin/chromium-driver
 
-# 4) Point WORKDIR to Django project folder
-WORKDIR /app/sampada_scraper
-
+# 4) Expose & run from /app (where manage.py lives)
 EXPOSE 8000
-CMD ["gunicorn", "sampada_scraper.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "sampada_scraper.wsgi:application", "--chdir", "/app", "--bind", "0.0.0.0:8000"]
