@@ -1,26 +1,21 @@
 import os
 from pathlib import Path
-# Top of settings.py, right after imports
-import sys
-print(">>> DEBUG:", DEBUG, file=sys.stderr)
-print(">>> ALLOWED_HOSTS from ENV:", os.getenv("ALLOWED_HOSTS"), file=sys.stderr)
-print(">>> FINAL ALLOWED_HOSTS:", ALLOWED_HOSTS, file=sys.stderr)
 
-# ─── Base dir ────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ─── Secret & Debug from ENV ────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-very-secret-key")
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-# ─── Allowed hosts ────────────────────────────────────────────────────────────
-# If ALLOWED_HOSTS env set, use that; else if DEBUG=False, allow all; else localhost
+# ALLOWED_HOSTS logic
 if os.getenv("ALLOWED_HOSTS"):
     ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
 elif not DEBUG:
     ALLOWED_HOSTS = ["*"]
 else:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+# ... the rest of settings as before, including Whitenoise, CSRF_TRUSTED_ORIGINS, etc.
+
 
 # ─── CSRF trusted origins ─────────────────────────────────────────────────────
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
