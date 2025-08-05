@@ -13,6 +13,10 @@ import pandas as pd
 from io import BytesIO
 import traceback
 
+# naya imports for temp profile handling
+import tempfile
+import shutil
+
 @csrf_exempt
 def trigger_scrape(request):
     if request.method == "POST":
@@ -26,15 +30,24 @@ def trigger_scrape(request):
                 "message": "Please fill all required fields."
             })
 
+        # create a unique chrome profile dir for each request
+        tmp_profile = tempfile.mkdtemp(prefix="chrome-profile-")
+
         try:
             options = Options()
             options.add_argument("--start-maximized")
-            driver = webdriver.Chrome(options=options)
+            # headless etc agar zaroori ho toh uncomment karo
+            # options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            # point user-data-dir to our temp dir
+            options.add_argument(f"--user-data-dir={tmp_profile}")
 
+            driver = webdriver.Chrome(options=options)
             driver.get("https://sampada.mpigr.gov.in/#/clogin")
             time.sleep(10)
 
-            
+            # language switch try/except
             try:
                 lang_switch = driver.find_element(By.XPATH, "//a[contains(text(), 'English')]")
                 lang_switch.click()
@@ -45,11 +58,11 @@ def trigger_scrape(request):
             except:
                 pass
 
-            
             success = False
             for attempt in range(20):
                 try:
                     print(f"🔁 Attempt {attempt + 1}")
+                    # refresh captcha
                     try:
                         refresh_btn = driver.find_element(By.XPATH, "//img[contains(@src, 'refresh_image')]")
                         driver.execute_script("arguments[0].click();", refresh_btn)
@@ -67,7 +80,8 @@ def trigger_scrape(request):
                     image_bytes = base64.b64decode(base64_img)
                     image = Image.open(BytesIO(image_bytes))
 
-                    pytesseract.pytesseract.tesseract_cmd = r"C:\\\\Program Files\\\\Tesseract-OCR\\\\tesseract.exe"
+                    # agar tesseract path alag ho toh adjust karo
+                    # pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
                     captcha_text = pytesseract.image_to_string(
                         image,
                         config='--psm 8 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
@@ -83,7 +97,6 @@ def trigger_scrape(request):
                     WebDriverWait(driver, 180).until(
                         EC.invisibility_of_element_located((By.XPATH, "//div[contains(text(), 'Please Wait')]"))
                     )
-
                     WebDriverWait(driver, 20).until(
                         EC.presence_of_element_located((By.XPATH, "//a[contains(text(), 'Search/Certified Copy')]"))
                     )
@@ -102,7 +115,7 @@ def trigger_scrape(request):
                         EC.presence_of_element_located((By.XPATH, "//a[contains(text(), 'Dashboard')]"))
                     )
 
-                    
+                    # click Search/Certified Copy
                     for _ in range(3):
                         try:
                             search_link = WebDriverWait(driver, 15).until(
@@ -114,23 +127,20 @@ def trigger_scrape(request):
                         except:
                             time.sleep(2)
 
-                    
+                    # select "Other" radio etc
                     other_radio = WebDriverWait(driver, 10).until(
                         EC.element_to_be_clickable((By.ID, "P2000_SEARCH_DOC_TYPE_1"))
                     )
                     driver.execute_script("arguments[0].click();", other_radio)
                     time.sleep(1)
 
-                    
                     driver.find_element(By.ID, "P2000_DISTRICT").click()
                     driver.find_element(By.XPATH, f"//option[contains(text(), '{district}')]").click()
                     time.sleep(1)
 
-                    
                     driver.find_element(By.ID, "CurrentFinancialYear1").click()
                     time.sleep(1)
 
-                    
                     deed_input = WebDriverWait(driver, 10).until(
                         EC.element_to_be_clickable((By.XPATH, "//input[@aria-autocomplete='list']"))
                     )
@@ -144,7 +154,7 @@ def trigger_scrape(request):
                     driver.execute_script("arguments[0].click();", conveyance_option)
                     time.sleep(0.5)
 
-                    
+                    # the big search+scrape loop...
                     while True:
                         try:
                             captcha_input = WebDriverWait(driver, 10).until(
@@ -160,7 +170,7 @@ def trigger_scrape(request):
                             captcha_text = pytesseract.image_to_string(
                                 captcha_image,
                                 config='--psm 8 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-                            ).strip().replace(" ", "").replace("\\n", "")
+                            ).strip().replace(" ", "").replace("\n", "")
                             print(" CAPTCHA Text:", captcha_text)
 
                             if len(captcha_text) < 4:
@@ -189,7 +199,7 @@ def trigger_scrape(request):
                             print(" Search button clicked.")
                             time.sleep(10)
 
-                            
+                            # handle alerts: captcha mismatch / no data, etc...
                             try:
                                 alert_msg_elem = WebDriverWait(driver, 5).until(
                                     EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'swal2-html-container')]"))
@@ -221,11 +231,13 @@ def trigger_scrape(request):
                             except Exception:
                                 print("No alert detected.")
 
-                            
+                            # wait for results, select page size, click each doc, scrape tables...
                             WebDriverWait(driver, 40).until(
                                 EC.presence_of_element_located((By.XPATH, "//mat-paginator"))
                             )
                             print(" Results loaded successfully.")
+
+                            # change pagination to 10-per-page
                             dropdown_xpath = "/html/body/app-root/div/app-layout/div/div/div/div/app-search-document/div[3]/div[2]/div[2]/div/fieldset[2]/div/div[2]/div/div[2]/div[2]/mat-paginator/div/div/div[1]/mat-form-field/div/div[1]/div/mat-select/div/div[2]"
                             option_100_xpath = "/html/body/div[3]/div[2]/div/div/div/mat-option[1]/span"
 
@@ -234,7 +246,7 @@ def trigger_scrape(request):
                             )
                             driver.execute_script("arguments[0].click();", dropdown)
                             print(" Dropdown clicked.")
-                            time.sleep(10)
+                            time.sleep(1)
 
                             option_100 = WebDriverWait(driver, 20).until(
                                 EC.element_to_be_clickable((By.XPATH, option_100_xpath))
@@ -242,31 +254,7 @@ def trigger_scrape(request):
                             driver.execute_script("arguments[0].click();", option_100)
                             print(" Selected '10' from dropdown.")
 
-                            try:
-                                WebDriverWait(driver, 30).until(
-                                    EC.invisibility_of_element_located((By.CSS_SELECTOR, "div.ngx-overlay.loading-foreground"))
-                                )
-
-                                first_doc = WebDriverWait(driver, 15).until(
-                                    EC.element_to_be_clickable((By.XPATH, "//span[contains(@class,'link') and contains(text(),'MP50IGR')]"))
-                                )
-                                first_doc.click()
-                                print(" First document link clicked.")
-                                WebDriverWait(driver, 10).until(
-                                    EC.visibility_of_element_located((By.XPATH, "//legend[contains(text(),'Registration Details')]"))
-                                )
-                                print(" Registration Details section loaded.")
-
-                                time.sleep(5)
-                                close_button = WebDriverWait(driver, 5).until(
-                                    EC.element_to_be_clickable((By.XPATH, "/html/body/ngb-modal-window/div/div/button[2]/span"))
-                                )
-                                close_button.click()
-                                print(" Closed for ")
-
-                            except Exception as e:
-                                print(" Failed to click document link:", e)
-
+                            # now collect each row's details into all_data
                             all_data = []
                             try:
                                 rows = WebDriverWait(driver, 10).until(
@@ -318,14 +306,16 @@ def trigger_scrape(request):
                                     except Exception as e:
                                         print(f" Error processing row {index + 1}:", str(e))
                                         continue
+
+                                # finally dump to Excel
                                 df = pd.DataFrame(all_data)
                                 df.to_excel("Sampada_Data_by_Murtuza_Ali.xlsx", index=False)
-                                print(" Data saved to 'Sampada_Data_by_Murtuza_Ali'")
+                                print(" Data saved to 'Sampada_Data_by_Murtuza_Ali.xlsx'")
                                 print(" Quitting...")
-                                break
                             except Exception as e:
                                 print(" Error inside search loop:", str(e))
-                                break 
+                            break
+
                         except Exception as e:
                             print(" General Error:", str(e))
                             break
@@ -335,6 +325,13 @@ def trigger_scrape(request):
         except Exception as e:
             print(" Outer exception:", str(e))
             traceback.print_exc()
+        finally:
+            # clean up: close chrome + delete temp profile
+            try:
+                driver.quit()
+            except:
+                pass
+            shutil.rmtree(tmp_profile, ignore_errors=True)
 
     return render(request, "trigger_scrape.html", {
         "message": " Scraping process completed (check console for logs)."
