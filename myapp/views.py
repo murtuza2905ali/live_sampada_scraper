@@ -206,7 +206,7 @@ def trigger_scrape(request):
                                 EC.presence_of_element_located((By.XPATH, "//button[contains(@class, 'swal2-confirm')]"))
                             )
                             if "Captcha mismatched" in alert_text:
-                                print(" CAPTCHA mismatched! Retrying...")
+                                print(" CAPTCHA mismatched! Retrying…")
                                 driver.execute_script("arguments[0].click();", alert_ok_btn)
                                 time.sleep(5)
                                 refresh_img = WebDriverWait(driver, 5).until(
@@ -229,7 +229,7 @@ def trigger_scrape(request):
                             print("No alert detected.")
 
                         WebDriverWait(driver, 40).until(
-                            EC.presence_of_element_located((By.XPATH,="//mat-paginator"))
+                            EC.presence_of_element_located((By.XPATH, "//mat-paginator"))
                         )
                         print(" Results loaded successfully.")
 
@@ -254,13 +254,13 @@ def trigger_scrape(request):
                         all_data = []
                         try:
                             rows = WebDriverWait(driver, 10).until(
-                                EC.presence_of_all_elements_located((By.XPATH, "//table/tbody/tr/td[2]/span[contains(@class, 'link')]"))
+                                EC.presence_of_all_elements_located((By.XPATH, "//table/tbody/tr/td[2]/span[contains(@class,'link')]"))
                             )
                             print(f"🔍 Found {len(rows)} document rows")
 
                             for index in range(len(rows)):
                                 try:
-                                    rows = driver.find_elements(By.XPATH, "//table/tbody/tr/td[2]/span[contains(@class, 'link')]")
+                                    rows = driver.find_elements(By.XPATH, "//table/tbody/tr/td[2]/span[contains(@class,'link')]")
                                     driver.execute_script("arguments[0].scrollIntoView(true);", rows[index])
                                     time.sleep(1)
                                     rows[index].click()
@@ -285,12 +285,12 @@ def trigger_scrape(request):
                                         "Districts": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[1]").text,
                                         "Tehsil": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[2]").text,
                                         "Type Of Area": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[3]").text,
-                                        "Ward/Village Name":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[4]").text,
-                                        "Property Type":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[5]").text,
-                                        "Address":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[6]").text,
-                                        "Property ID":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[7]").text,
-                                        "Khasra No":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[8]").text,
-                                        "House/Flat No./Plot No.":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[9]").text
+                                        "Ward/Village Name": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[4]").text,
+                                        "Property Type": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[5]").text,
+                                        "Address": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[6]").text,
+                                        "Property ID": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[7]").text,
+                                        "Khasra No": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[8]").text,
+                                        "House/Flat No./Plot No.": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[9]").text
                                     }
                                     all_data.append(data)
                                     close_button = WebDriverWait(driver, 5).until(
@@ -308,6 +308,7 @@ def trigger_scrape(request):
                             df.to_excel("Sampada_Data_by_Murtuza_Ali.xlsx", index=False)
                             print(" Data saved to 'Sampada_Data_by_Murtuza_Ali.xlsx'")
                             print(" Quitting...")
+
                         except Exception as e:
                             print(" General Error:", str(e))
                         break
