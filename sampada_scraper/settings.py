@@ -1,5 +1,10 @@
 import os
 from pathlib import Path
+# Top of settings.py, right after imports
+import sys
+print(">>> DEBUG:", DEBUG, file=sys.stderr)
+print(">>> ALLOWED_HOSTS from ENV:", os.getenv("ALLOWED_HOSTS"), file=sys.stderr)
+print(">>> FINAL ALLOWED_HOSTS:", ALLOWED_HOSTS, file=sys.stderr)
 
 # ─── Base dir ────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
