@@ -4,3 +4,5 @@ pillow
 pytesseract
 pandas
 gunicorn
+whitenoise
+
