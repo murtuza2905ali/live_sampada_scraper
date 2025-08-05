@@ -30,7 +30,7 @@ def trigger_scrape(request):
                 "message": "Please fill all required fields."
             })
 
-        # you can keep this if you ever want per-request profiles
+        # per-request Chrome profile to avoid locked-profile errors
         tmp_profile = tempfile.mkdtemp(prefix="chrome-profile-")
 
         try:
@@ -39,7 +39,6 @@ def trigger_scrape(request):
             # options.add_argument("--headless")      # uncomment if you want headless
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
-            # 👇 re-enable a unique user-data-dir per request to avoid locked-profile errors
             options.add_argument(f"--user-data-dir={tmp_profile}")
 
             driver = webdriver.Chrome(options=options)
@@ -268,7 +267,6 @@ def trigger_scrape(request):
                                     WebDriverWait(driver, 10).until(
                                         EC.visibility_of_element_located((By.XPATH, "//legend[contains(text(),'Registration Details')]"))
                                     )
-                                    print(" Registration Details section loaded.")
                                     WebDriverWait(driver, 10).until(
                                         EC.presence_of_element_located((By.XPATH, "//legend[contains(text(),'Party To')]/following::table[1]/tbody/tr"))
                                     )
@@ -297,10 +295,9 @@ def trigger_scrape(request):
                                         EC.element_to_be_clickable((By.XPATH, "/html/body/ngb-modal-window/div/div/button[2]/span"))
                                     )
                                     close_button.click()
-                                    print(f"Closed for row {index + 1}")
                                     time.sleep(2)
                                 except Exception as e:
-                                    print(f" Error processing row {index + 1}:", str(e))
+                                    print(f" Error processing row {index + 1}:", e)
                                     continue
 
                             # dump to Excel
@@ -310,19 +307,17 @@ def trigger_scrape(request):
                             print(" Quitting...")
 
                         except Exception as e:
-                            print(" General Error:", str(e))
-                        break
+                            print(" General Error in row loop:", e)
 
+                        break  # end of main while
         except Exception as e:
-            print(" Outer exception:", str(e))
+            print(" Outer exception:", e)
             traceback.print_exc()
-
         finally:
             try:
                 driver.quit()
             except:
                 pass
-            # clean up the temp profile
             shutil.rmtree(tmp_profile, ignore_errors=True)
 
     return render(request, "trigger_scrape.html", {
