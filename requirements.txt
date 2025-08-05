@@ -1,0 +1,6 @@
+Django
+selenium
+pillow
+pytesseract
+pandas
+gunicorn
