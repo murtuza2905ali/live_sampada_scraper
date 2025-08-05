@@ -39,7 +39,8 @@ def trigger_scrape(request):
             # options.add_argument("--headless")      # uncomment if you want headless
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
-            # <<< REMOVED: options.add_argument(f"--user-data-dir={tmp_profile}") >>>
+            # 👇 re-enable a unique user-data-dir per request to avoid locked-profile errors
+            options.add_argument(f"--user-data-dir={tmp_profile}")
 
             driver = webdriver.Chrome(options=options)
             driver.get("https://sampada.mpigr.gov.in/#/clogin")
@@ -224,11 +225,11 @@ def trigger_scrape(request):
                                 driver.execute_script("arguments[0].click();", alert_ok_btn)
                                 time.sleep(5)
                                 continue
-                        except Exception:
+                        except:
                             print("No alert detected.")
 
                         WebDriverWait(driver, 40).until(
-                            EC.presence_of_element_located((By.XPATH, "//mat-paginator"))
+                            EC.presence_of_element_located((By.XPATH,="//mat-paginator"))
                         )
                         print(" Results loaded successfully.")
 
@@ -284,12 +285,12 @@ def trigger_scrape(request):
                                         "Districts": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[1]").text,
                                         "Tehsil": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[2]").text,
                                         "Type Of Area": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[3]").text,
-                                        "Ward/Village Name": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[4]").text,
-                                        "Property Type": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[5]").text,
-                                        "Address": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[6]").text,
-                                        "Property ID": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[7]").text,
-                                        "Khasra No": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[8]").text,
-                                        "House/Flat No./Plot No.": driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[9]").text
+                                        "Ward/Village Name":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[4]").text,
+                                        "Property Type":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[5]").text,
+                                        "Address":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[6]").text,
+                                        "Property ID":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[7]").text,
+                                        "Khasra No":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[8]").text,
+                                        "House/Flat No./Plot No.":	driver.find_element(By.XPATH, "//legend[contains(text(),'Property Details')]/following::table[1]/tbody/tr/td[9]").text
                                     }
                                     all_data.append(data)
                                     close_button = WebDriverWait(driver, 5).until(
@@ -311,21 +312,17 @@ def trigger_scrape(request):
                             print(" General Error:", str(e))
                         break
 
-                except Exception as e:
-                    print(" Post-login error:", str(e))
-                    traceback.print_exc()
-
         except Exception as e:
             print(" Outer exception:", str(e))
             traceback.print_exc()
 
         finally:
-            # just quit the browser; no more tempfile fiddling
             try:
                 driver.quit()
             except:
                 pass
-            # shutil.rmtree(tmp_profile, ignore_errors=True)  # no longer needed
+            # clean up the temp profile
+            shutil.rmtree(tmp_profile, ignore_errors=True)
 
     return render(request, "trigger_scrape.html", {
         "message": " Scraping process completed (check console for logs)."
